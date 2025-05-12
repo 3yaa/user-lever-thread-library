@@ -6,25 +6,50 @@
 #include "sem.h"
 
 struct semaphore {
-	/* TODO Phase 3 */
+	queue_t blocked_q;
+	size_t count;
 };
 
-sem_t sem_create(size_t count)
-{
-	/* TODO Phase 3 */
+sem_t sem_create(size_t count) {
+	sem_t sem = malloc(sizeof(*sem));
+	sem->count = count;
+	sem->blocked_q = queue_create();
+	return sem;
 }
 
-int sem_destroy(sem_t sem)
-{
-	/* TODO Phase 3 */
+int sem_destroy(sem_t sem) {
+	if (sem == NULL || queue_length(sem->blocked_q) > 0)
+		return -1;
+	//
+	queue_destroy(sem->blocked_q);
+	free(sem);
+	return 0;
 }
 
-int sem_down(sem_t sem)
-{
-	/* TODO Phase 3 */
+int sem_down(sem_t sem) {
+	if (sem == NULL) return -1;
+	//
+	preempt_disable();
+	while (sem->count == 0) {
+		struct uthread_tcb *cur = uthread_current();
+		queue_enqueue(sem->blocked_q, cur);
+		uthread_block();
+	}
+	sem->count--;
+	preempt_enable();
+	return 0;
 }
 
-int sem_up(sem_t sem)
-{
-	/* TODO Phase 3 */
+int sem_up(sem_t sem) {
+	if (sem == NULL) return -1;
+	//
+	preempt_disable();
+	sem->count++;
+	if (queue_length(sem->blocked_q) > 0) {
+		struct uthread_tcb *cur;
+		queue_dequeue(sem->blocked_q, (void**)&cur);
+		uthread_unblock(cur);
+	}
+	preempt_enable();
+	return 0;
 }

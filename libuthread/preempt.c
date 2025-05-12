@@ -14,51 +14,48 @@
  * 100Hz is 100 times per second
  */
 #define HZ 100
-static bool preempt_on = false;
+static bool preempt_on;
+static sigset_t vt_set;
+static struct sigaction old_sa;
+static struct itimerval old_timer;
 
 void preempt_disable(void) {
-	if (!preempt_on) return;
-	preempt_on = false;
+	sigprocmask(SIG_BLOCK, &vt_set, NULL);
 }
 
 void preempt_enable(void) {
-	if (preempt_on) return;
-	preempt_on = true;
+	sigprocmask(SIG_UNBLOCK, &vt_set, NULL);
 }
 
 //not defined
 static void preempt_handler(int signum) {
 	(void)signum;
-	if (!preempt_on) return;
 	uthread_yield();
 }
 
 void preempt_start(bool preempt) {
 	preempt_on = preempt;
 	if (!preempt_on) return;
+	//
+	sigemptyset(&vt_set);
+	sigaddset(&vt_set, SIGVTALRM);
 	//set the handler
-	struct sigaction sa;
+	struct sigaction sa = {0};
 	sa.sa_handler = preempt_handler;
-	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
-	sigaction(SIGVTALRM, &sa, NULL);
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGVTALRM, &sa, &old_sa);
 	//timer
 	struct itimerval timer = {0};
-	timer.it_interval.tv_sec = 0;
 	timer.it_interval.tv_usec = 1000000/HZ; //10k micoseonds
 	timer.it_value = timer.it_interval;
-	setitimer(ITIMER_VIRTUAL, &timer, NULL);
+	setitimer(ITIMER_VIRTUAL, &timer, &old_timer);
 }
 
 void preempt_stop(void) {
 	if (!preempt_on) return;
 	//reset timer
-	struct itimerval timer = {0};
-	setitimer(ITIMER_VIRTUAL, &timer, NULL);
+	setitimer(ITIMER_VIRTUAL, &old_timer, NULL);
 	//reset action
-	struct sigaction sa;
-	sa.sa_handler = SIG_DFL;
-	sigaction(SIGVTALRM, &sa, NULL);
-	preempt_on = false;
+	sigaction(SIGVTALRM, &old_sa, NULL);
 }
-

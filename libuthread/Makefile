@@ -1,10 +1,10 @@
 CC      := gcc
 AR      := ar
-CFLAGS  := -Wall -Wextra -g
+CFLAGS  := -Wall -Wextra -Werror -g
 INC     := -I.
 
 lib := libuthread.a
-objs := queue.o uthread.o context.o preempt.o
+objs := queue.o uthread.o context.o sem.o preempt.o
 
 all: $(lib)
 
