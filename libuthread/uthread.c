@@ -134,10 +134,7 @@ int uthread_run(bool preempt, uthread_func_t func, void *arg) {
 	if (uthread_create(func, arg) == -1) return -1;
 	
 	//preemptive
-	if (preempt) {
-		return 0;
-		// preempt_enable();
-	}
+	preempt_start(preempt);
 	
 	//scheuling
 	schedule_loop(NULL);

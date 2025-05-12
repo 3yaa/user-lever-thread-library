@@ -4,7 +4,7 @@ CFLAGS  := -Wall -Wextra -g
 INC     := -I.
 
 lib := libuthread.a
-objs := queue.o uthread.o context.o
+objs := queue.o uthread.o context.o preempt.o
 
 all: $(lib)
 
