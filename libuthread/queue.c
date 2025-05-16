@@ -118,4 +118,3 @@ int queue_length(queue_t queue) {
 	}
 	return (int)queue->count;
 }
-
