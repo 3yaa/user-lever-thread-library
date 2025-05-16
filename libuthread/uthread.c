@@ -49,7 +49,7 @@ void uthread_yield(void) {
 	//
 	preempt_disable();
 	if (ur.current->state == RUNNING) {
-		ur.current->stack = READY;
+		ur.current->state = READY;
 		queue_enqueue(ur.ready_q, ur.current);
 	}
 	preempt_enable();
@@ -161,11 +161,7 @@ void uthread_block(void) {
 }
 
 void uthread_unblock(struct uthread_tcb *uthread) {
-	preempt_disable();
-
 	uthread->state = READY;
 	queue_enqueue(ur.ready_q, uthread);
-
-	preempt_enable();
 	return;
 }

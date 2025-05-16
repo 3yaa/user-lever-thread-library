@@ -27,7 +27,6 @@ void preempt_enable(void) {
 	sigprocmask(SIG_UNBLOCK, &vt_set, NULL);
 }
 
-//not defined
 static void preempt_handler(int signum) {
 	(void)signum;
 	uthread_yield();
